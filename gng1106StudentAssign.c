@@ -10,23 +10,50 @@ typedef struct
 }student;
 
 FILE *f = NULL;
+student *s = NULL; 		// Student Array
+int numStudents = 0;
+
+void display(void)
+{
+	if(s != NULL)
+	for(int x = 0; x < numStudents; x++)
+		printf("%s %ld %f\n", s[x].name, s[x].ID, s[x].mark); 
+}
+
+void fillStudentArr(void)
+{
+	// Make sure file is closed, student array is empty
+	if(f != NULL)
+		fclose(f);
+	if(s != NULL)
+		free(s);
+	// Open file to read into arr
+	f = fopen("students.txt", "r");
+	if(f == NULL)
+		printf("\nFile failed to open.");
+	else
+	{
+
+		// Grab the # of students:
+		fscanf(f, "%d\n", &numStudents);
+		s = malloc(sizeof(student)*numStudents);
+		// Read into our student array:
+		for(int x = 0; x < numStudents; x++)
+			fscanf(f, "%s %ld %f\n", s[x].name, &s[x].ID, &s[x].mark);
+	}
+}
+
+
 
 int main()
 {
 	int opt = -1;
 	while(opt != 5)
 	{
-		// Make sure file is closed
-		if(f != NULL)
-			fclose(f);
-		f = NULL;
-		f = fopen("students.txt", "r");
-		if(f == NULL)
-		{
-			printf("\nFile failed to open.");
-			break;
-		}
-
+		// Read file, fill our array
+		fillStudentArr();
+		display();
+		
 		opt = -1;
 		printf("\n1. Search");
 		printf("\n2. Add");
@@ -43,36 +70,6 @@ int main()
 		switch(opt)
 		{
 			case 1:		// Game Mode
-				randDoor();		// Pick door to have prize behind it
-				opt = -1;
-				while(opt > 3 || opt < 1)
-				{
-					printf("\nPick a door!(1 - 3): ");
-					scanf("%d", &opt);
-					fflush(stdin);
-				}
-				userPick = opt;
-
-				mPick = montysPick(userPick, 0, false);	// Pick an empty door that isnt the users pick
-				weSwitch(&mPick, &userPick, false, false);	
-
-				if(doors[userPick - 1])
-				{
-					gamesWon++;
-					printf("\nYou have won!");
-				}
-				else
-					printf("\nYou have not won!");
-				if(doors[mPick - 1])
-					printf("\nMonty has won!");
-				else
-					printf("\nMonty has not won!");
-
-				revealDoors();
-				gamesPlayed++;
-				printf("\nGames played: %d, games won: %d.", gamesPlayed, gamesWon);
-
-				userPick = -1;
 				opt = -1;
 				break;
 		/*
@@ -126,10 +123,13 @@ int main()
 				break;
 			case 3:		// Quit
 				*/
-				break;
 		}
 	}
 
+	if(s != NULL)
+		free(s);
+	if(f != NULL)
+		fclose(f);
 	return 0;
 }
 
