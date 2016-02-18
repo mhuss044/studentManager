@@ -11,22 +11,21 @@ typedef struct
 
 FILE *f = NULL;
 student *s = NULL; 		// Student Array
-int numStudents = 0;
-
-void display(void)
-{
-	if(s != NULL)
-	for(int x = 0; x < numStudents; x++)
-		printf("%s %ld %f\n", s[x].name, s[x].ID, s[x].mark); 
-}
+int numStudents = 0, N = -1;
 
 void fillStudentArr(void)
 {
 	// Make sure file is closed, student array is empty
 	if(f != NULL)
+	{
 		fclose(f);
+		f = NULL;
+	}
 	if(s != NULL)
+	{
 		free(s);
+		s = NULL;
+	}
 	// Open file to read into arr
 	f = fopen("students.txt", "r");
 	if(f == NULL)
@@ -40,20 +39,104 @@ void fillStudentArr(void)
 		// Read into our student array:
 		for(int x = 0; x < numStudents; x++)
 			fscanf(f, "%s %ld %f\n", s[x].name, &s[x].ID, &s[x].mark);
+
+		fclose(f);
+		f = NULL;
 	}
+
 }
 
+void display(void)
+{
+	fillStudentArr();
+	printf("\nFile contents:\n");
+	if(s != NULL)
+		for(int x = 0; x < numStudents; x++)
+			printf("%s %ld %f\n", s[x].name, s[x].ID, s[x].mark); 
+}
 
+int removeStudent(int N)
+{
+	int found = 0;
+	// Make sure file is closed, student array is empty
+	if(f != NULL)
+	{
+		fclose(f);
+		f = NULL;
+	}
+
+	if(numStudents > 0)
+		numStudents--;
+	else
+		return 0; 	// Nothing to delete
+	
+	// Open file to read into arr
+	f = fopen("students.txt", "w");
+	if(f == NULL)
+		printf("\nFile failed to open.");
+	else
+	{
+		fprintf(f, "%d\n", numStudents);
+		// Write our array except specified N:
+		for(int x = 0; x < numStudents+1; x++)
+			if(N != s[x].ID)
+				fprintf(f, "%s %ld %f\n", s[x].name, s[x].ID, s[x].mark);
+			else
+				found = 1;
+
+		fclose(f);
+		f = NULL;
+		fillStudentArr();
+	}
+
+	return found;
+}
+
+void add(void)
+{
+	long int ID;
+	float mark;
+	char name[30];
+
+	printf("\nEnter Name of student: ");
+	scanf("%s", name);
+	printf("\nEnter ID of student: ");
+	scanf("%ld", &ID);
+	printf("\nEnter mark of student: ");
+	scanf("%f", &mark);
+
+	// Make sure file is closed, student array is empty
+	if(f != NULL)
+	{
+		fclose(f);
+		f = NULL;
+	}
+
+	numStudents++;
+
+	// Open file to write into arr
+	f = fopen("students.txt", "w");
+	if(f == NULL)
+		printf("\nFile failed to open.");
+	else
+	{
+		fprintf(f, "%d\n", numStudents);
+		// Write our array except specified N:
+		for(int x = 0; x < numStudents+1; x++)
+			fprintf(f, "%s %ld %f\n", s[x].name, s[x].ID, s[x].mark);
+		// Write new student:
+		fprintf(f, "%s %ld %f\n", name, ID, mark);
+		fclose(f);
+		f = NULL;
+		fillStudentArr();
+	}
+}
 
 int main()
 {
 	int opt = -1;
 	while(opt != 5)
 	{
-		// Read file, fill our array
-		fillStudentArr();
-		display();
-		
 		opt = -1;
 		printf("\n1. Search");
 		printf("\n2. Add");
@@ -69,60 +152,47 @@ int main()
 
 		switch(opt)
 		{
-			case 1:		// Game Mode
+			case 1:		// Search
+				// Read file, fill our array
+				fillStudentArr();
+				
+				// Get N to find
+				printf("\nEnter student number of student to display: ");
+				scanf("%d", &N);
+
+				// Find and display
+				for(int x = 0; x < numStudents; x++)
+					if(N == s[x].ID)
+						printf("\nStudent Found:\n%s %ld %f\n", s[x].name, s[x].ID, s[x].mark);
 				opt = -1;
 				break;
-		/*
-			case 2:		// Research Mode
-				opt = -1;
-				printf("\n1.Yes.");
-				printf("\n2. No.");
-
-				while(opt > 2 || opt < 1)
-				{
-					printf("\nAlways switch? ");
-					scanf("%d", &opt);
-					fflush(stdin);
-				}
-
-				printf("\nNumber of tests to run: ");
-				scanf("%d", &numTests);
-				fflush(stdin);
-
-				while(numTests > 0)
-				{
-					randDoor();		// Pick door to have prize behind it
-					switch(opt)
-					{
-						case 1:		// Always switch
-							userPick = 1;
-
-							mPick = montysPick(userPick, 0, false);	// Pick an empty door that isnt the users pick
-							weSwitch(&mPick, &userPick, true, true);	
-
-							if(doors[userPick - 1])
-								testGamesWon++;
-							break;
-						case 2:		// Never switch
-							userPick = 1;
-
-							mPick = montysPick(userPick, 0, false);	// Pick an empty door that isnt the users pick
-							weSwitch(&mPick, &userPick, true, false);	
-
-							if(doors[userPick - 1])
-								testGamesWon++;
-							break;
-					}
-					numTests--;
-				}
-
-				printf("\nGames won: %d.", testGamesWon);
-				testGamesWon = 0;
-				userPick = -1;
+			case 2:		// Add
+				fillStudentArr();
+				add();
+				display();
 				opt = -1;
 				break;
-			case 3:		// Quit
-				*/
+			case 3:		// Remove
+				// Read file, fill our array
+				fillStudentArr();
+				
+				// Get N to find
+				printf("\nEnter student number of student to delete: ");
+				scanf("%d", &N);
+
+				// Write all except specified N
+				if(!removeStudent(N))
+					printf("Could not remove %d, not found in file.\n", N);
+				// Show new file:
+				display();
+				break;
+			case 4:		// Display
+				display();
+				opt = -1;
+				break;
+			case 5:
+				opt = 5;
+				break;
 		}
 	}
 
